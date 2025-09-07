@@ -13,122 +13,108 @@ echo "🚀 设置代理配置..."
 
 # 检测SOCKS5代理是否可用
 check_socks5_proxy() {
-    # 方法1：使用netcat检测SOCKS5端口是否开放
-    if command -v nc >/dev/null 2>&1; then
-        if nc -z 127.0.0.1 ${SOCKS5_PROXY_PORT} 2>/dev/null; then
-            echo "🔍 使用netcat检测到SOCKS5代理端口开放"
-            return 0
-        fi
+    if command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 ${SOCKS5_PROXY_PORT} 2>/dev/null; then
+        echo "🔍 使用netcat检测到SOCKS5代理端口开放"
+        return 0
     fi
-    
-    # 方法2：使用lsof检查端口是否被监听
-    if command -v lsof >/dev/null 2>&1; then
-        if lsof -i :${SOCKS5_PROXY_PORT} >/dev/null 2>&1; then
-            echo "🔍 使用lsof检测到SOCKS5代理端口被监听"
-            return 0
-        fi
+    if command -v lsof >/dev/null 2>&1 && lsof -i :${SOCKS5_PROXY_PORT} >/dev/null 2>&1; then
+        echo "🔍 使用lsof检测到SOCKS5代理端口被监听"
+        return 0
     fi
-    
-    # 方法3：使用netstat检查端口
-    if command -v netstat >/dev/null 2>&1; then
-        if netstat -an 2>/dev/null | grep -q ":${SOCKS5_PROXY_PORT}.*LISTEN"; then
-            echo "🔍 使用netstat检测到SOCKS5代理端口监听中"
-            return 0
-        fi
+    if command -v netstat >/dev/null 2>&1 && netstat -an 2>/dev/null | grep -q ":${SOCKS5_PROXY_PORT}.*LISTEN"; then
+        echo "🔍 使用netstat检测到SOCKS5代理端口监听中"
+        return 0
     fi
-    
-    # 方法4：使用telnet作为最后的备选方案
-    if command -v telnet >/dev/null 2>&1; then
-        if timeout 2 telnet 127.0.0.1 ${SOCKS5_PROXY_PORT} </dev/null >/dev/null 2>&1; then
-            echo "🔍 使用telnet检测到SOCKS5代理可连接"
-            return 0
-        fi
+    if command -v telnet >/dev/null 2>&1 && timeout 2 telnet 127.0.0.1 ${SOCKS5_PROXY_PORT} </dev/null >/dev/null 2>&1; then
+        echo "🔍 使用telnet检测到SOCKS5代理可连接"
+        return 0
     fi
-    
     return 1
 }
 
-# 优先使用SOCKS5代理，不可用时使用HTTP代理
-if check_socks5_proxy; then
-    echo "✅ SOCKS5代理可用，优先使用SOCKS5代理"
-    PREFERRED_PROXY="${SOCKS5_PROXY}"
-    PROXY_TYPE="SOCKS5"
-else
-    echo "⚠️  SOCKS5代理不可用，回退到HTTP代理"
-    PREFERRED_PROXY="${HTTP_PROXY}"
-    PROXY_TYPE="HTTP"
-fi
+# 设置代理函数
+set_proxy() {
+    local proxy_address=$1
+    local proxy_type=$2
 
-# 设置系统环境变量代理
-export http_proxy="${PREFERRED_PROXY}"
-export https_proxy="${PREFERRED_PROXY}"
-export HTTP_PROXY="${PREFERRED_PROXY}"
-export HTTPS_PROXY="${PREFERRED_PROXY}"
-export all_proxy="${PREFERRED_PROXY}"
-export ALL_PROXY="${PREFERRED_PROXY}"
+    export http_proxy="${proxy_address}"
+    export https_proxy="${proxy_address}"
+    export HTTP_PROXY="${proxy_address}"
+    export HTTPS_PROXY="${proxy_address}"
+    export all_proxy="${proxy_address}"
+    export ALL_PROXY="${proxy_address}"
 
-# 设置不使用代理的地址
-export no_proxy="localhost,127.0.0.1,::1,.local"
-export NO_PROXY="localhost,127.0.0.1,::1,.local"
+    export no_proxy="localhost,127.0.0.1,::1,.local"
+    export NO_PROXY="localhost,127.0.0.1,::1,.local"
 
-# Git、NPM等工具通常不支持SOCKS5，使用HTTP代理
-# 注意：这里使用原始HTTP代理地址，不是被SOCKS5覆盖的变量
-HTTP_PROXY_ORIGINAL="http://127.0.0.1:${HTTP_PROXY_PORT}"
-if [ "$PROXY_TYPE" = "SOCKS5" ]; then
-    echo "🔧 配置Git代理（使用HTTP代理，因为Git不支持SOCKS5）..."
-    TOOL_PROXY="${HTTP_PROXY_ORIGINAL}"
-else
-    echo "🔧 配置Git代理..."
-    TOOL_PROXY="${HTTP_PROXY_ORIGINAL}"
-fi
-
-git config --global http.proxy "${TOOL_PROXY}"
-git config --global https.proxy "${TOOL_PROXY}"
-
-# 设置NPM代理
-echo "📦 配置NPM代理..."
-npm config set proxy "${TOOL_PROXY}"
-npm config set https-proxy "${TOOL_PROXY}"
-npm config set registry https://registry.npmjs.org/
-
-# 设置Yarn代理（如果有的话）
-if command -v yarn >/dev/null 2>&1; then
-    echo "🧶 配置Yarn代理..."
-    yarn config set proxy "${TOOL_PROXY}"
-    yarn config set https-proxy "${TOOL_PROXY}"
-fi
-
-# 设置pnpm代理（如果有的话）
-if command -v pnpm >/dev/null 2>&1; then
-    echo "📌 配置pnpm代理..."
-    pnpm config set proxy "${TOOL_PROXY}"
-    pnpm config set https-proxy "${TOOL_PROXY}"
-fi
-
-# 设置gemini-cli代理（如果有的话）
-if command -v gemini >/dev/null 2>&1; then
-    echo "💎 配置gemini-cli代理..."
-    # gemini-cli 使用系统环境变量，但为了确保兼容性，也设置特定的代理环境变量
-    export GEMINI_PROXY="${PREFERRED_PROXY}"
-    export GEMINI_HTTP_PROXY="${TOOL_PROXY}"
-    export GEMINI_HTTPS_PROXY="${TOOL_PROXY}"
+    # Git、NPM等工具通常不支持SOCKS5，统一使用HTTP代理
+    local tool_proxy="http://127.0.0.1:${HTTP_PROXY_PORT}"
     
-    # 为gemini命令创建代理别名，因为gemini需要显式指定--proxy参数
-    alias gemini="command gemini --proxy '${TOOL_PROXY}'"
-fi
+    echo "🔧 配置Git代理..."
+    git config --global http.proxy "${tool_proxy}"
+    git config --global https.proxy "${tool_proxy}"
 
-echo "✅ 代理设置完成！"
+    echo "📦 配置NPM代理..."
+    npm config set proxy "${tool_proxy}"
+    npm config set https-proxy "${tool_proxy}"
+    npm config set registry https://registry.npmjs.org/
+
+    if command -v yarn >/dev/null 2>&1; then
+        echo "🧶 配置Yarn代理..."
+        yarn config set proxy "${tool_proxy}"
+        yarn config set https-proxy "${tool_proxy}"
+    fi
+
+    if command -v pnpm >/dev/null 2>&1; then
+        echo "📌 配置pnpm代理..."
+        pnpm config set proxy "${tool_proxy}"
+        pnpm config set https-proxy "${tool_proxy}"
+    fi
+
+    if command -v gemini >/dev/null 2>&1; then
+        echo "💎 配置gemini-cli代理..."
+        export GEMINI_PROXY="${proxy_address}"
+        export GEMINI_HTTP_PROXY="${tool_proxy}"
+        export GEMINI_HTTPS_PROXY="${tool_proxy}"
+        alias gemini="command gemini --proxy '${tool_proxy}'"
+    fi
+
+    echo "✅ 代理设置完成！"
+    echo ""
+    echo "当前代理配置："
+    echo "系统代理类型: ${proxy_type}"
+    echo "系统代理地址: ${proxy_address}"
+    echo "工具代理地址: ${tool_proxy}"
+}
+
+# 根据传入参数选择代理模式
+MODE=${1:-auto} # 默认为auto模式
+
+case "$MODE" in
+    auto)
+        echo "🔄 自动模式：优先检测SOCKS5代理..."
+        if check_socks5_proxy; then
+            echo "✅ SOCKS5代理可用，优先使用SOCKS5代理"
+            set_proxy "${SOCKS5_PROXY}" "SOCKS5"
+        else
+            echo "⚠️  SOCKS5代理不可用，回退到HTTP代理"
+            set_proxy "${HTTP_PROXY}" "HTTP"
+        fi
+        ;;
+    sock5)
+        echo "🔒 强制使用SOCKS5代理..."
+        set_proxy "${SOCKS5_PROXY}" "SOCKS5"
+        ;;
+    http)
+        echo "🌐 强制使用HTTP代理..."
+        set_proxy "${HTTP_PROXY}" "HTTP"
+        ;;
+    *)
+        echo "❌ 无效参数: $MODE"
+        echo "用法: source set_proxy.sh [auto|sock5|http]"
+        return 1
+        ;;
+esac
+
 echo ""
-echo "当前代理配置："
-echo "系统代理类型: ${PROXY_TYPE}"
-echo "系统代理地址: ${PREFERRED_PROXY}"
-echo "工具代理地址: ${TOOL_PROXY}"
-echo "HTTP代理: ${HTTP_PROXY_ORIGINAL}"
-echo "SOCKS5代理: ${SOCKS5_PROXY}"
-if command -v gemini >/dev/null 2>&1; then
-    echo "gemini-cli代理: ✅ 已配置"
-else
-    echo "gemini-cli代理: ❌ 未安装"
-fi
-echo ""
-echo "要取消代理设置，请运行: source ~/bin/unset_proxy.sh"
+echo "要取消代理设置，请运行: source unset_proxy.sh"
