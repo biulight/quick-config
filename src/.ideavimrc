@@ -181,7 +181,7 @@ let g:WhichKeyDesc_f_FindUsages = "<leader>fu 查找用法"
 nmap <leader>fu <action>(FindUsages)
 vmap <leader>fu <action>(FindUsages)
 
-if &ide =~? 'intellij webstorm'
+if &ide =~? 'webstorm'
   let g:WhichKeyDesc_f_FormatCode = "<leader>fc 格式化代码"
   nmap <leader>fc :action ReformatCode<CR>:action Javascript.Linters.EsLint.Fix<CR>
   vmap <leader>fc :action ReformatCode<CR>:action Javascript.Linters.EsLint.Fix<CR>
