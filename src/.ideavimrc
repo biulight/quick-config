@@ -183,8 +183,8 @@ vmap <leader>fu <action>(FindUsages)
 
 if &ide =~? 'webstorm'
   let g:WhichKeyDesc_f_FormatCode = "<leader>fc 格式化代码"
-  nmap <leader>fc :action ReformatCode<CR>:action Javascript.Linters.EsLint.Fix<CR>
-  vmap <leader>fc :action ReformatCode<CR>:action Javascript.Linters.EsLint.Fix<CR>
+  nmap <leader>fc :action ReformatWithPrettierAction<CR>:action Javascript.Linters.EsLint.Fix<CR>
+  vmap <leader>fc :action ReformatWithPrettierAction<CR>:action Javascript.Linters.EsLint.Fix<CR>
 elseif &ide =~? 'pycharm'
 else
   let g:WhichKeyDesc_f_FormatCode = "<leader>fc 格式化代码"
