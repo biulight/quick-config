@@ -49,7 +49,7 @@ set_proxy() {
 
     # Git、NPM等工具通常不支持SOCKS5，统一使用HTTP代理
     local tool_proxy="http://127.0.0.1:${HTTP_PROXY_PORT}"
-    
+
     echo "🔧 配置Git代理..."
     git config --global http.proxy "${tool_proxy}"
     git config --global https.proxy "${tool_proxy}"
@@ -60,9 +60,24 @@ set_proxy() {
     npm config set registry https://registry.npmjs.org/
 
     if command -v yarn >/dev/null 2>&1; then
-        echo "🧶 配置Yarn代理..."
-        yarn config set proxy "${tool_proxy}"
-        yarn config set https-proxy "${tool_proxy}"
+        yarn_version=$(yarn --version)
+        case "$yarn_version" in
+            1.*)
+                echo "🧶 配置Yarn@${yarn_version}代理..."
+                yarn config set proxy "${tool_proxy}"
+                yarn config set https-proxy "${tool_proxy}"
+                ;;
+            2.*|3.*)
+                echo "🧶 配置Yarn@${yarn_version}代理..."
+                yarn config set httpProxy "${tool_proxy}"
+                yarn config set httpsProxy "${tool_proxy}"
+                ;;
+            *)
+                echo "⚠️ 未知的Yarn版本: ${yarn_version}，尝试使用通用配置"
+                yarn config set proxy "${tool_proxy}"
+                yarn config set https-proxy "${tool_proxy}"
+                ;;
+        esac
     fi
 
     if command -v pnpm >/dev/null 2>&1; then

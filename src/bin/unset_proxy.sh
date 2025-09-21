@@ -56,8 +56,22 @@ npm config delete https-proxy 2>/dev/null || echo "  ℹ️ NPM https-proxy 未�
 # 取消Yarn代理（如果有的话）
 if command -v yarn >/dev/null 2>&1; then
     echo "🧶 取消Yarn代理..."
-    yarn config delete proxy 2>/dev/null || echo "  ℹ️ Yarn proxy 未设置或已清除"
-    yarn config delete https-proxy 2>/dev/null || echo "  ℹ️ Yarn https-proxy 未设置或已清除"
+    yarn_version=$(yarn --version)
+    case "$yarn_version" in
+        1.*)
+            yarn config delete proxy 2>/dev/null || echo "  ℹ️ Yarn proxy 未设置或已清除"
+            yarn config delete https-proxy 2>/dev/null || echo "  ℹ️ Yarn https-proxy 未设置或已清除"
+            ;;
+        2.*|3.*)
+            yarn config delete httpProxy 2>/dev/null || echo "  ℹ️ Yarn httpProxy 未设置或已清除"
+            yarn config delete httpsProxy 2>/dev/null || echo "  ℹ️ Yarn httpsProxy 未设置或已清除"
+            ;;
+        *)
+            echo "⚠️ 未知的Yarn版本: ${yarn_version}，尝试使用通用配置"
+            yarn config delete proxy 2>/dev/null || echo "  ℹ️ Yarn proxy 未设置或已清除"
+            yarn config delete https-proxy 2>/dev/null || echo "  ℹ️ Yarn https-proxy 未设置或已清除"
+            ;;
+    esac
 else
     echo "ℹ️ Yarn 未安装，跳过"
 fi
