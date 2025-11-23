@@ -5,7 +5,7 @@
 echo "🔄 取消代理配置..."
 
 # 显示当前代理设置（如果有的话）
-if [ -n "$http_proxy" ] || [ -n "$HTTP_PROXY" ] || [ -n "$GEMINI_PROXY" ]; then
+if [ -n "$http_proxy" ] || [ -n "$HTTP_PROXY" ]; then
     echo "🔍 当前检测到的代理设置："
     [ -n "$http_proxy" ] && echo "  http_proxy: $http_proxy"
     [ -n "$https_proxy" ] && echo "  https_proxy: $https_proxy"
@@ -13,9 +13,6 @@ if [ -n "$http_proxy" ] || [ -n "$HTTP_PROXY" ] || [ -n "$GEMINI_PROXY" ]; then
     [ -n "$HTTPS_PROXY" ] && echo "  HTTPS_PROXY: $HTTPS_PROXY"
     [ -n "$all_proxy" ] && echo "  all_proxy: $all_proxy"
     [ -n "$ALL_PROXY" ] && echo "  ALL_PROXY: $ALL_PROXY"
-    [ -n "$GEMINI_PROXY" ] && echo "  GEMINI_PROXY: $GEMINI_PROXY"
-    [ -n "$GEMINI_HTTP_PROXY" ] && echo "  GEMINI_HTTP_PROXY: $GEMINI_HTTP_PROXY"
-    [ -n "$GEMINI_HTTPS_PROXY" ] && echo "  GEMINI_HTTPS_PROXY: $GEMINI_HTTPS_PROXY"
     echo ""
 else
     echo "ℹ️  当前没有检测到代理环境变量"
@@ -32,16 +29,7 @@ unset ALL_PROXY
 unset no_proxy
 unset NO_PROXY
 
-# 取消gemini-cli代理环境变量
-echo "💎 清除gemini-cli代理环境变量..."
-unset GEMINI_PROXY
-unset GEMINI_HTTP_PROXY
-unset GEMINI_HTTPS_PROXY
 
-# 移除gemini代理别名
-if command -v gemini >/dev/null 2>&1 && alias gemini >/dev/null 2>&1; then
-    unalias gemini
-fi
 
 # 取消Git代理
 echo "🔧 取消Git代理..."
@@ -90,5 +78,5 @@ echo "✅ 代理设置已取消！"
 echo ""
 echo "📝 提示："
 echo "  - 环境变量代理已清除（仅影响当前终端会话）"
-echo "  - Git/NPM/Yarn/pnpm/gemini-cli 的全局代理配置已清除"
+echo "  - Git/NPM/Yarn/pnpm 的全局代理配置已清除"
 echo "  - 若要重新设置代理，请运行： source ~/bin/set_proxy.sh"

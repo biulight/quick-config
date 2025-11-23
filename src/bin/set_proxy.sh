@@ -86,14 +86,6 @@ set_proxy() {
         pnpm config set https-proxy "${tool_proxy}"
     fi
 
-    if command -v gemini >/dev/null 2>&1; then
-        echo "💎 配置gemini-cli代理..."
-        export GEMINI_PROXY="${proxy_address}"
-        export GEMINI_HTTP_PROXY="${tool_proxy}"
-        export GEMINI_HTTPS_PROXY="${tool_proxy}"
-        alias gemini="command gemini --proxy '${tool_proxy}'"
-    fi
-
     echo "✅ 代理设置完成！"
     echo ""
     echo "当前代理配置："
